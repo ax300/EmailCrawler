@@ -59,14 +59,34 @@ def get_emails(result_bytes):
         msgs.append(data) 
         
         for response_part in data:
-            
+            #passa por cada mensagem do email
             if isinstance(response_part, tuple):
                 part = response_part[1].decode('utf-8')
                 msg = email.message_from_string(part)
                 #msg = email.message_from_string(str(response_part[1]).strip())
                 print("subject: " + str(msg['Subject']))
+                #print("To:" + str(msg['To']))
                 print("from: " + str(msg['from']))
-  
+                print("Delivered to:" + str(msg['Delivered-To']))
+                #print("Received:" + str(msg['Received']))
+                #print("X-Google-Smtp-Source:" + str(msg['X-Google-Smtp-Source']))
+                #print("X-Received:" + str(msg['X-Received']))
+                #print("ARC-Seal:" + str(msg['ARC-Seal']))
+                #print("ARC-Message-Signature:" + str(msg['ARC-Message-Signature']))
+                #print("ARC-Authentication-Results:" + str(msg['ARC-Authentication-Results']))
+                #print("Return-Path:" + str(msg['Return-Path']))
+                #print("Received-SPF:" + str(msg['Received-SPF']))
+                #print("Authentication-Results:" + str(msg['Authentication-Results']))
+                #print("DKIM-Signature:" + str(msg['DKIM-Signature']))
+                #print("X-Report-Abuse:" + str(msg['X-Report-Abuse']))
+                #print("X-Mandrill-User:" + str(msg['X-Mandrill-User']))
+                #print("Message-Id:" + str(msg['Message-Id']))
+                print("Date:" + str(msg['Date']))
+                #print("MIME-Version:" + str(msg['MIME-Version']))
+                #print("Content-Type:" + str(msg['Content-Type']))  
+                c=msg.get_payload(None, True)
+                #print(c)
+                print("===========================================================================================================================")
     return msgs 
   
 # this is done to make SSL connnection with GMAIL 
@@ -86,13 +106,15 @@ msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con))
 # Uncomment this to see what actually comes as data  
 #print(msgs) 
 #  
+
+"""
 x = 1
 for msg in msgs:
     
-    #print('Message ' + str(x) + ': ')
-    #print(msg['from'])
+    print('Message ' + str(x) + ': ')
+    print(msg['from'])
     x+=1
-
+"""
 
 
 # Finding the required content from our msgs 
