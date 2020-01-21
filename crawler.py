@@ -1,5 +1,5 @@
 # Importing libraries
-import imaplib, email, getpass
+import imaplib, email, getpass, html2text
 
 #user = 'andre.cavicchiolli@usp.br'
 imap_url = 'imap.gmail.com'
@@ -85,7 +85,8 @@ def get_emails(result_bytes):
                 #print("MIME-Version:" + str(msg['MIME-Version']))
                 #print("Content-Type:" + str(msg['Content-Type']))  
                 c=msg.get_payload(None, True)
-                #print(c)
+                print(type(c))
+                print(html2text.html2text(str(c)))
                 print("===========================================================================================================================")
     return msgs 
   
