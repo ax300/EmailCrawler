@@ -1,5 +1,1 @@
-<<<<<<< HEAD
-qwe,qwe
-=======
-
->>>>>>> e402dcf61b3199c2b69d190026335dd46f468d11
+andre.cavicchiolli@usp.br,@xistreccient0
