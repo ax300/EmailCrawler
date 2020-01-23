@@ -1,6 +1,6 @@
 # Importing libraries
 import imaplib, email, getpass, html2text, re, datetime
-import urllib.request
+
 #user = 'andre.cavicchiolli@usp.br'
 imap_url = 'imap.gmail.com'
 user = ''
@@ -67,7 +67,6 @@ def get_emails(result_bytes):
                 msg = email.message_from_string(part)
                 #msg = email.message_from_string(str(response_part[1]).strip())
                 print("subject: " + msg['Subject'])
-                #print("To:" + str(msg['To']))
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
                 print("from: " + FROM[0])
@@ -76,14 +75,13 @@ def get_emails(result_bytes):
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
                 print(timestamp.strftime('%s'))
                 c = get_body(msg)
-                #q = quote(c, safe=' <>="/:!')
                 print(html2text.html2text(c.decode('utf-8')))
                 print("===========================================================================================================================")
     return msgs 
   
 # this is done to make SSL connnection with GMAIL 
 con = imaplib.IMAP4_SSL(imap_url)  
-
+# Pega informacoes de login ou mantem as atuais
 login_info()
 # logging the user in 
 con.login(user,password)
@@ -95,46 +93,3 @@ con.select('Inbox')
  # fetching emails from this user "tu**h*****1@gmail.com" 
 msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con)) 
 #msgs = get_emails(search(None,'all' con))   
-
-# Uncomment this to see what actually comes as data  
-#print(msgs) 
-#  
-
-"""
-x = 1
-for msg in msgs:
-    
-    print('Message ' + str(x) + ': ')
-    print(msg['from'])
-    x+=1
-"""
-
-
-# Finding the required content from our msgs 
-# User can make custom changes in this part to 
-# fetch the required content he / she needs 
-  
-# printing them by the order they are displayed in your gmail  
-"""
-for msg in msgs[::-1]:  
-    for sent in msg: 
-        if type(sent) is tuple:  
-  
-            # encoding set as utf-8 
-            content = str(sent[1], 'utf-8')  
-            data = str(content) 
-  
-            # Handling errors related to unicodenecode 
-            try:  
-                indexstart = data.find("ltr") 
-                data2 = data[indexstart + 5: len(data)] 
-                indexend = data2.find("</div>") 
-  
-                # printtng the required content which we need 
-                # to extract from our email i.e our body 
-                print(data2[0: indexend]) 
-  
-            except UnicodeEncodeError as e: 
-                pass
-
-"""
