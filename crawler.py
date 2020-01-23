@@ -1,5 +1,5 @@
 # Importing libraries
-import imaplib, email, getpass, html2text, re
+import imaplib, email, getpass, html2text, re, datetime
 import urllib.request
 #user = 'andre.cavicchiolli@usp.br'
 imap_url = 'imap.gmail.com'
@@ -73,6 +73,8 @@ def get_emails(result_bytes):
                 print("from: " + FROM[0])
                 print("Delivered to:" + msg['Delivered-To'])
                 print("Date: " + msg['Date'])
+                timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
+                print(timestamp.strftime('%s'))
                 c = get_body(msg)
                 #q = quote(c, safe=' <>="/:!')
                 print(html2text.html2text(c.decode('utf-8')))
