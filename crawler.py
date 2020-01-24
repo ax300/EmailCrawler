@@ -68,28 +68,24 @@ def get_emails(result_bytes):
         typ, data = con.fetch(num, '(RFC822)') 
         msgs.append(data) 
         
-        
         for response_part in data:
             #passa por cada mensagem do email
             if isinstance(response_part, tuple):
                 part = response_part[1].decode('utf-8')
                 msg = email.message_from_string(part)
                 #msg = email.message_from_string(str(response_part[1]).strip())
-                
-                if(msg['Subject'].find('=?UTF-8?') != -1 or msg['Subject'].find('=?utf-8?') != -1):
-                    print("subject: " + decode_mime_words(msg['Subject']))
-                else:
-                    print("subject: " + msg['Subject'])
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
+                print(define_subject(msg))
                 print("from: " + FROM[0])
                 print("Delivered to: " + msg['Delivered-To'])
                 print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
                 print(timestamp.strftime('%s'))
-                c = get_body(msg)
-                #print(html2text.html2text(c.decode('utf-8')))
+                cat_transaction(msg)
+                
                 print("===========================================================================================================================")
+
     return msgs 
 
 #cria aba na planilha
@@ -155,7 +151,51 @@ def fill_sheet(sheet, book):
     book.save("base.xlsx")
 
 #insere os valores da planilha das transacoes
-#def insert_transaction():
+def insert_transaction(msg, category):
+    s = '**'
+    print('transaction occurs')
+    c = get_body(msg)
+    message = html2text.html2text(c.decode('utf-8'))
+    #print(html2text.html2text(c.decode('utf-8')))
+    if (category == 1 ):
+        #procura entidade
+        print(message.find('(((())))'))
+        #procura valor
+
+    elif (category == 2):
+        #procura entidade
+        print(message.find('(((((())))))'))
+        #procura valor
+
+    elif (category == 3):
+        #procura entidade
+        m1 = 'transferência de'
+        m2 = 'e o valor'
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
+        #procura valor
+
+#preenche o subject com valor sem codificacao
+def define_subject(msg):
+    if(msg['Subject'].find('=?UTF-8?') != -1 or msg['Subject'].find('=?utf-8?') != -1):
+        return decode_mime_words(msg['Subject'])
+    else:
+        return msg['Subject']
+
+    return 'Error Subject'
+
+#categoriza transacao
+def cat_transaction(msg):
+    category= 0
+    if(define_subject(msg).find('Pagamento') != -1):
+        category = 1
+        insert_transaction(msg, category)
+    elif(define_subject(msg).find('Transferência realizada') != -1):
+        category = 2
+        insert_transaction(msg, category)
+    elif(define_subject(msg).find('recebeu uma transferência!') != -1):
+        category = 3
+        insert_transaction(msg, category)
+        
 
 
 # this is done to make SSL connnection with GMAIL 
