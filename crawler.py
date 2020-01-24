@@ -55,6 +55,12 @@ def search(key, value, con):
     #result, data = con.search(None, 'ALL') 
     return data 
   
+#Decodifica strings ainda codificadas
+def decode_mime_words(s):
+    return u''.join(
+        word.decode(encoding or 'utf8') if isinstance(word, bytes) else word
+        for word, encoding in email.header.decode_header(s))
+
 # Function to get the list of emails under this label 
 def get_emails(result_bytes): 
     msgs = [] # all the email data are pushed inside an array 
@@ -69,17 +75,21 @@ def get_emails(result_bytes):
                 part = response_part[1].decode('utf-8')
                 msg = email.message_from_string(part)
                 #msg = email.message_from_string(str(response_part[1]).strip())
-                #print("subject: " + msg['Subject'])
+                
+                if(msg['Subject'].find('=?UTF-8?') != -1 or msg['Subject'].find('=?utf-8?') != -1):
+                    print("subject: " + decode_mime_words(msg['Subject']))
+                else:
+                    print("subject: " + msg['Subject'])
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
-                #print("from: " + FROM[0])
-                #print("Delivered to: " + msg['Delivered-To'])
-                #print("Date: " + msg['Date'])
+                print("from: " + FROM[0])
+                print("Delivered to: " + msg['Delivered-To'])
+                print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
-                #print(timestamp.strftime('%s'))
+                print(timestamp.strftime('%s'))
                 c = get_body(msg)
                 #print(html2text.html2text(c.decode('utf-8')))
-                #print("===========================================================================================================================")
+                print("===========================================================================================================================")
     return msgs 
 
 #cria aba na planilha
@@ -144,39 +154,38 @@ def fill_sheet(sheet, book):
     sheet.write(5, 12, xlwt.Formula('SUM(M5;L6)'))
     book.save("base.xlsx")
 
+#insere os valores da planilha das transacoes
+#def insert_transaction():
+
+
 # this is done to make SSL connnection with GMAIL 
 con = imaplib.IMAP4_SSL(imap_url)  
 # Pega informacoes de login ou mantem as atuais
 login_info()
 # logging the user in 
-    #con.login(user,password)
+con.login(user,password)
   
 # calling function to check for email under this label 
 
-    #con.select('Inbox')  
+con.select('Inbox')  
   
 
  # fetching emails from this user "tu**h*****1@gmail.com" 
 
-
-    #msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con)) 
+msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con)) 
 
 
 #msgs = get_emails(search(None,'all' con))   
-
+'''
 # verifica se a planilha com os dados ja existe
 year = datetime.datetime.today().year
 #year = '2026'
 sheet_name = str(year)
-'''
-for name in xlrd.open_workbook("base.xlsx").sheet_names():
-    print(name)
 
-print(sheet_name in xlrd.open_workbook("base.xlsx").sheet_names())
-'''
 if (os.path.isfile("base.xlsx") == False):
     print('cria')
     create_file(sheet_name)
 elif ((sheet_name in xlrd.open_workbook("base.xlsx").sheet_names())== False):
     print('cria sheet')
     create_sheet(sheet_name)
+'''
