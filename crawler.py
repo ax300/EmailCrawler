@@ -8,6 +8,7 @@ imap_url = 'imap.gmail.com'
 user = ''
 password = ''
 meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+meses1 = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'] 
   
 #pega informacoes de login e as guarda num txt  
 def get_pass():
@@ -82,7 +83,7 @@ def get_emails(result_bytes):
                 print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
                 print(timestamp.strftime('%s'))
-                cat_transaction(msg)
+                cat_transaction(msg, timestamp)
                 
                 print("===========================================================================================================================")
 
@@ -151,21 +152,32 @@ def fill_sheet(sheet, book):
     book.save("base.xlsx")
 
 #insere os valores da planilha das transacoes
-def insert_transaction(msg, category):
+def insert_transaction(msg, category, timestamp):
     s = '**'
     print('transaction occurs')
     c = get_body(msg)
     message = html2text.html2text(c.decode('utf-8'))
     #print(html2text.html2text(c.decode('utf-8')))
+
     if (category == 1 ):
         #procura entidade
-        print(message.find('(((())))'))
+        m1 = 'Favorecido'
+        m2 = 'Código de barras'
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
         #procura valor
+        m1 = 'Valor'
+        m2 = 'Favorecido'
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
 
     elif (category == 2):
         #procura entidade
-        print(message.find('(((((())))))'))
+        m1 = 'A transferência para'
+        m2 = 'foi realizada com sucesso'
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
         #procura valor
+        m1 = 'Valor Enviado'
+        m2 =str(timestamp.day) + " " + meses1[timestamp.month-1]
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
 
     elif (category == 3):
         #procura entidade
@@ -173,6 +185,17 @@ def insert_transaction(msg, category):
         m2 = 'e o valor'
         print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
         #procura valor
+        m1 = 'Valor Enviado'
+        m2 = str(timestamp.day) + " " + meses1[timestamp.month-1]
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
+        
+    elif (category == 4):
+        #print(message)
+        #valor
+        m1 = 'pagamento de R$ '
+        m2 = 'da sua fatura'
+        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
+        
 
 #preenche o subject com valor sem codificacao
 def define_subject(msg):
@@ -184,18 +207,20 @@ def define_subject(msg):
     return 'Error Subject'
 
 #categoriza transacao
-def cat_transaction(msg):
+def cat_transaction(msg,timestamp):
     category= 0
     if(define_subject(msg).find('Pagamento') != -1):
         category = 1
-        insert_transaction(msg, category)
+        insert_transaction(msg, category,timestamp)
     elif(define_subject(msg).find('Transferência realizada') != -1):
         category = 2
-        insert_transaction(msg, category)
+        insert_transaction(msg, category,timestamp)
     elif(define_subject(msg).find('recebeu uma transferência!') != -1):
         category = 3
-        insert_transaction(msg, category)
-        
+        insert_transaction(msg, category,timestamp)
+    elif(define_subject(msg).find('Pagamento de fatura') != -1):
+        category = 4
+        insert_transaction(msg, category,timestamp)    
 
 
 # this is done to make SSL connnection with GMAIL 
