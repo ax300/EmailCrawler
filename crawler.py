@@ -8,7 +8,7 @@ imap_url = 'imap.gmail.com'
 user = ''
 password = ''
 meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
-meses1 = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'] 
+meses1 = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
   
 #pega informacoes de login e as guarda num txt  
 def get_pass():
@@ -78,11 +78,12 @@ def get_emails(result_bytes):
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
                 print(define_subject(msg))
-                print("from: " + FROM[0])
+                #print("from: " + FROM[0])
                 print("Delivered to: " + msg['Delivered-To'])
                 print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
-                print(timestamp.strftime('%s'))
+                
+                #print(timestamp.strftime('%s'))
                 cat_transaction(msg, timestamp)
                 
                 print("===========================================================================================================================")
@@ -154,48 +155,41 @@ def fill_sheet(sheet, book):
 #insere os valores da planilha das transacoes
 def insert_transaction(msg, category, timestamp):
     s = '**'
-    print('transaction occurs')
     c = get_body(msg)
     message = html2text.html2text(c.decode('utf-8'))
-    #print(html2text.html2text(c.decode('utf-8')))
-
+    
+    pattern_of_value = re.compile(r'\d+,\d\d')
+    match_value = pattern_of_value.findall(message)
+    print("ACHEI O VALOR: " + str(match_value[0]))
+    # (\*\*\b[A-Z].*?\b)+\s
+    pattern_of_entity = re.compile(r'\*\*([A-Za-z\s^\nÀ-ÖØ-öø-ÿ]*?)\*\*')
+    match_entity = pattern_of_entity.findall(message)
+    pattern_of_entity2 = re.compile(r'\*([A-Za-zÀ-ÖØ-öø-ÿ\.\s^/\n]*?)\*')
+    match_entity2 = pattern_of_entity.findall(message)
+    print("ACHEI A ENTIDADE: " + str(match_entity))
+    print("ACHEI A ENTIDADE2: " + str(match_entity2))
     if (category == 1 ):
         #procura entidade
         m1 = 'Favorecido'
         m2 = 'Código de barras'
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
-        #procura valor
-        m1 = 'Valor'
-        m2 = 'Favorecido'
+        #print(message)
         print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
 
     elif (category == 2):
         #procura entidade
-        m1 = 'A transferência para'
-        m2 = 'foi realizada com sucesso'
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
-        #procura valor
-        m1 = 'Valor Enviado'
-        m2 =str(timestamp.day) + " " + meses1[timestamp.month-1]
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
+        print()
 
     elif (category == 3):
         #procura entidade
-        m1 = 'transferência de'
+        m1 = 'transferência de '
         m2 = 'e o valor'
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
-        #procura valor
-        m1 = 'Valor Enviado'
-        m2 = str(timestamp.day) + " " + meses1[timestamp.month-1]
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
-        
-    elif (category == 4):
         #print(message)
-        #valor
-        m1 = 'pagamento de R$ '
-        m2 = 'da sua fatura'
         print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
         
+    elif (category != 4):
+        #fatura
+        #valor   
+        print()
 
 #preenche o subject com valor sem codificacao
 def define_subject(msg):
@@ -209,7 +203,7 @@ def define_subject(msg):
 #categoriza transacao
 def cat_transaction(msg,timestamp):
     category= 0
-    if(define_subject(msg).find('Pagamento') != -1):
+    if(define_subject(msg).find('Pagamento realizado') != -1):
         category = 1
         insert_transaction(msg, category,timestamp)
     elif(define_subject(msg).find('Transferência realizada') != -1):
