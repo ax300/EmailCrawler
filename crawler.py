@@ -9,6 +9,8 @@ user = ''
 password = ''
 meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
 meses1 = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ']
+year = datetime.datetime.today().year
+sheet_name = str(year)
   
 #pega informacoes de login e as guarda num txt  
 def get_pass():
@@ -82,7 +84,7 @@ def get_emails(result_bytes):
                 print("Delivered to: " + msg['Delivered-To'])
                 print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
-                
+                #print("MÊS: " + str(timestamp.month))
                 #print(timestamp.strftime('%s'))
                 cat_transaction(msg, timestamp)
                 
@@ -153,43 +155,38 @@ def fill_sheet(sheet, book):
     book.save("base.xlsx")
 
 #insere os valores da planilha das transacoes
-def insert_transaction(msg, category, timestamp):
-    s = '**'
-    c = get_body(msg)
-    message = html2text.html2text(c.decode('utf-8'))
-    
+def get_values(msg, category, timestamp):
+    c = get_body(msg).decode('utf-8')
+    message = html2text.html2text(c) 
+    #filtra o valor transferido/pago da mensagem
     pattern_of_value = re.compile(r'\d+,\d\d')
     match_value = pattern_of_value.findall(message)
-    print("ACHEI O VALOR: " + str(match_value[0]))
-    # (\*\*\b[A-Z].*?\b)+\s
-    pattern_of_entity = re.compile(r'\*\*([A-Za-z\s^\nÀ-ÖØ-öø-ÿ]*?)\*\*')
+    print("Valor: " + str(match_value[0]))
+    #filtra a entidade da qual recebeu/enviou tal valor
+    pattern_of_entity = re.compile(r'\*+([A-Za-z\s^\nÀ-ÖØ-öø-ÿ!,]*?)\*+')
     match_entity = pattern_of_entity.findall(message)
-    pattern_of_entity2 = re.compile(r'\*([A-Za-zÀ-ÖØ-öø-ÿ\.\s^/\n]*?)\*')
-    match_entity2 = pattern_of_entity.findall(message)
-    print("ACHEI A ENTIDADE: " + str(match_entity))
-    print("ACHEI A ENTIDADE2: " + str(match_entity2))
+    
+    pattern_of_entity2 = re.compile(r'\*+\s*(.*?)\n?(.*?)\s*\*+')
+    match_entity2 = pattern_of_entity2.findall(message)
+
     if (category == 1 ):
         #procura entidade
-        m1 = 'Favorecido'
-        m2 = 'Código de barras'
-        #print(message)
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
+        concatenated = ''
+        for word in match_entity2[2]:
+            concatenated += word
+        print("ACHEI A ENTIDADE2: " + concatenated)
 
     elif (category == 2):
         #procura entidade
-        print()
+        print("ACHEI A ENTIDADE: " + match_entity[1])
 
     elif (category == 3):
         #procura entidade
-        m1 = 'transferência de '
-        m2 = 'e o valor'
-        #print(message)
-        print(message[message.find(m1)+len(m1) : message.find(m2)].split(s))
-        
-    elif (category != 4):
-        #fatura
-        #valor   
-        print()
+        print("ACHEI A ENTIDADE: " + match_entity[1])
+         
+    elif (category == 4):
+        #fatura  
+        print('Entidade: Nubank')
 
 #preenche o subject com valor sem codificacao
 def define_subject(msg):
@@ -205,17 +202,36 @@ def cat_transaction(msg,timestamp):
     category= 0
     if(define_subject(msg).find('Pagamento realizado') != -1):
         category = 1
-        insert_transaction(msg, category,timestamp)
+        get_values(msg, category,timestamp)
     elif(define_subject(msg).find('Transferência realizada') != -1):
         category = 2
-        insert_transaction(msg, category,timestamp)
+        get_values(msg, category,timestamp)
     elif(define_subject(msg).find('recebeu uma transferência!') != -1):
         category = 3
-        insert_transaction(msg, category,timestamp)
+        get_values(msg, category,timestamp)
     elif(define_subject(msg).find('Pagamento de fatura') != -1):
         category = 4
-        insert_transaction(msg, category,timestamp)    
+        get_values(msg, category,timestamp)    
 
+def get_sheet_by_name(sheet_name):
+    try:
+        for idx in itertools.count():
+            sheet = book.get_sheet(idx)
+            if sheet.name == sheet_name:
+                return sheet
+    except IndexError:
+        print("Planilha não existe.")
+        return None
+
+def insert_sheet(category, timestamp, value, entity, sheet_name):
+    book = xlrd.open_workbook('base.xlsx')
+    worksheet = get_sheet_by_name(sheet_name)
+    #insere entidade numa coluna fixa
+    worksheet.write(2,0,entity)
+    #insere valor
+    worksheet.write(2,timestamp.month, value)
+    
+    
 
 # this is done to make SSL connnection with GMAIL 
 con = imaplib.IMAP4_SSL(imap_url)  
@@ -235,11 +251,8 @@ msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con))
 
 
 #msgs = get_emails(search(None,'all' con))   
-'''
+
 # verifica se a planilha com os dados ja existe
-year = datetime.datetime.today().year
-#year = '2026'
-sheet_name = str(year)
 
 if (os.path.isfile("base.xlsx") == False):
     print('cria')
@@ -247,4 +260,3 @@ if (os.path.isfile("base.xlsx") == False):
 elif ((sheet_name in xlrd.open_workbook("base.xlsx").sheet_names())== False):
     print('cria sheet')
     create_sheet(sheet_name)
-'''
