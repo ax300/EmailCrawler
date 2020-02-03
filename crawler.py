@@ -1,7 +1,6 @@
 # Importing libraries
-import imaplib, email, getpass, html2text, re, datetime, os.path, xlwt, xlrd
+import imaplib, email, getpass, html2text, re, datetime, os.path, xlwt, xlrd, itertools
 from xlutils.copy import copy as xl_copy
-
 
 #user = 'andre.cavicchiolli@usp.br'
 imap_url = 'imap.gmail.com'
@@ -76,7 +75,6 @@ def get_emails(result_bytes):
             if isinstance(response_part, tuple):
                 part = response_part[1].decode('utf-8')
                 msg = email.message_from_string(part)
-                #msg = email.message_from_string(str(response_part[1]).strip())
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
                 print(define_subject(msg))
@@ -87,7 +85,6 @@ def get_emails(result_bytes):
                 #print("MÊS: " + str(timestamp.month))
                 #print(timestamp.strftime('%s'))
                 cat_transaction(msg, timestamp)
-                
                 print("===========================================================================================================================")
 
     return msgs 
@@ -111,47 +108,47 @@ def create_file(sheet_name):
 #preenche planilha
 def fill_sheet(sheet, book):
     #campos e formulas
-    sheet.write(0, 1,  'Janeiro')
-    sheet.write(0, 2,  'Fevereiro')
-    sheet.write(0, 3,  'Março')
-    sheet.write(0, 4,  'Abril')
-    sheet.write(0, 5,  'Maio')
-    sheet.write(0, 6,  'Junho')
-    sheet.write(0, 7,  'Julho')
-    sheet.write(0, 8,  'agosto')
-    sheet.write(0, 9,  'Setembro')
-    sheet.write(0, 10, 'Outubro')
-    sheet.write(0, 11, 'Novembro')
-    sheet.write(0, 12, 'Dezembro')
-    sheet.write(1,0,'Salário')
-    sheet.write(4,0,'Total Mensal')
-    sheet.write(5,0,'Total')
+    sheet.write(0, 1,   'Janeiro')
+    sheet.write(0, 2,   'Fevereiro')
+    sheet.write(0, 3,   'Março')
+    sheet.write(0, 4,   'Abril')
+    sheet.write(0, 5,   'Maio')
+    sheet.write(0, 6,   'Junho')
+    sheet.write(0, 7,   'Julho')
+    sheet.write(0, 8,   'agosto')
+    sheet.write(0, 9,   'Setembro')
+    sheet.write(0, 10,  'Outubro')
+    sheet.write(0, 11,  'Novembro')
+    sheet.write(0, 12,  'Dezembro')
+    sheet.write(1,0,    'Salário')
+    sheet.write(99,0,   'Total Mensal')
+    sheet.write(100,0,  'Total')
     #Totais Mensais
-    sheet.write(4, 1,  xlwt.Formula('SUM(B2:B4)'))
-    sheet.write(4, 2,  xlwt.Formula('SUM(C2:C4)'))
-    sheet.write(4, 3,  xlwt.Formula('SUM(D2:D4)'))
-    sheet.write(4, 4,  xlwt.Formula('SUM(E2:E4)'))
-    sheet.write(4, 5,  xlwt.Formula('SUM(F2:F4)'))
-    sheet.write(4, 6,  xlwt.Formula('SUM(G2:G4)'))
-    sheet.write(4, 7,  xlwt.Formula('SUM(H2:H4)'))
-    sheet.write(4, 8,  xlwt.Formula('SUM(I2:I4)'))
-    sheet.write(4, 9,  xlwt.Formula('SUM(J2:J4)'))
-    sheet.write(4, 10, xlwt.Formula('SUM(K2:K4)'))
-    sheet.write(4, 11, xlwt.Formula('SUM(L2:L4)'))
-    sheet.write(4, 12, xlwt.Formula('SUM(M2:M4)'))
+    sheet.write(99, 1,  xlwt.Formula('SUM(B2:B98)'))
+    sheet.write(99, 2,  xlwt.Formula('SUM(C2:C98)'))
+    sheet.write(99, 3,  xlwt.Formula('SUM(D2:D98)'))
+    sheet.write(99, 4,  xlwt.Formula('SUM(E2:E98)'))
+    sheet.write(99, 5,  xlwt.Formula('SUM(F2:F98)'))
+    sheet.write(99, 6,  xlwt.Formula('SUM(G2:G98)'))
+    sheet.write(99, 7,  xlwt.Formula('SUM(H2:H98)'))
+    sheet.write(99, 8,  xlwt.Formula('SUM(I2:I98)'))
+    sheet.write(99, 9,  xlwt.Formula('SUM(J2:J98)'))
+    sheet.write(99, 10, xlwt.Formula('SUM(K2:K98)'))
+    sheet.write(99, 11, xlwt.Formula('SUM(L2:L98)'))
+    sheet.write(99, 12, xlwt.Formula('SUM(M2:M98)'))
     #Totais
-    sheet.write(5, 1,  xlwt.Formula('SUM(B5;A6)'))
-    sheet.write(5, 2,  xlwt.Formula('SUM(C5;B6)'))
-    sheet.write(5, 3,  xlwt.Formula('SUM(D5;C6)'))
-    sheet.write(5, 4,  xlwt.Formula('SUM(E5;D6)'))
-    sheet.write(5, 5,  xlwt.Formula('SUM(F5;E6)'))
-    sheet.write(5, 6,  xlwt.Formula('SUM(G5;F6)'))
-    sheet.write(5, 7,  xlwt.Formula('SUM(H5;G6)'))
-    sheet.write(5, 8,  xlwt.Formula('SUM(I5;H6)'))
-    sheet.write(5, 9,  xlwt.Formula('SUM(J5;I6)'))
-    sheet.write(5, 10, xlwt.Formula('SUM(K5;J6)'))
-    sheet.write(5, 11, xlwt.Formula('SUM(L5;K6)'))
-    sheet.write(5, 12, xlwt.Formula('SUM(M5;L6)'))
+    sheet.write(100, 1,  xlwt.Formula('SUM(B100;A101)'))
+    sheet.write(100, 2,  xlwt.Formula('SUM(C100;B101)'))
+    sheet.write(100, 3,  xlwt.Formula('SUM(D100;C101)'))
+    sheet.write(100, 4,  xlwt.Formula('SUM(E100;D101)'))
+    sheet.write(100, 5,  xlwt.Formula('SUM(F100;E101)'))
+    sheet.write(100, 6,  xlwt.Formula('SUM(G100;F101)'))
+    sheet.write(100, 7,  xlwt.Formula('SUM(H100;G101)'))
+    sheet.write(100, 8,  xlwt.Formula('SUM(I100;H101)'))
+    sheet.write(100, 9,  xlwt.Formula('SUM(J100;I101)'))
+    sheet.write(100, 10, xlwt.Formula('SUM(K100;J101)'))
+    sheet.write(100, 11, xlwt.Formula('SUM(L100;K101)'))
+    sheet.write(100, 12, xlwt.Formula('SUM(M100;L101)'))
     book.save("base.xlsx")
 
 #insere os valores da planilha das transacoes
@@ -160,12 +157,12 @@ def get_values(msg, category, timestamp):
     message = html2text.html2text(c) 
     #filtra o valor transferido/pago da mensagem
     pattern_of_value = re.compile(r'\d+,\d\d')
-    match_value = pattern_of_value.findall(message)
-    print("Valor: " + str(match_value[0]))
+    value = pattern_of_value.findall(message)
+    
+    print("Valor: " + str(value[0]))
     #filtra a entidade da qual recebeu/enviou tal valor
     pattern_of_entity = re.compile(r'\*+([A-Za-z\s^\nÀ-ÖØ-öø-ÿ!,]*?)\*+')
     match_entity = pattern_of_entity.findall(message)
-    
     pattern_of_entity2 = re.compile(r'\*+\s*(.*?)\n?(.*?)\s*\*+')
     match_entity2 = pattern_of_entity2.findall(message)
 
@@ -175,18 +172,22 @@ def get_values(msg, category, timestamp):
         for word in match_entity2[2]:
             concatenated += word
         print("ACHEI A ENTIDADE2: " + concatenated)
+        insert_sheet(category, timestamp, value[0], concatenated)
 
     elif (category == 2):
         #procura entidade
         print("ACHEI A ENTIDADE: " + match_entity[1])
+        insert_sheet(category, timestamp, value[0], match_entity[1])
 
     elif (category == 3):
         #procura entidade
         print("ACHEI A ENTIDADE: " + match_entity[1])
-         
+        insert_sheet(category, timestamp, value[0], match_entity[1])
+
     elif (category == 4):
         #fatura  
         print('Entidade: Nubank')
+        insert_sheet(category, timestamp, value[0], 'Nubank')
 
 #preenche o subject com valor sem codificacao
 def define_subject(msg):
@@ -213,25 +214,77 @@ def cat_transaction(msg,timestamp):
         category = 4
         get_values(msg, category,timestamp)    
 
-def get_sheet_by_name(sheet_name):
+#pega o nome da planilha do ano atual
+def get_sheet_by_name(book):
     try:
         for idx in itertools.count():
             sheet = book.get_sheet(idx)
             if sheet.name == sheet_name:
+                print(sheet_name)
                 return sheet
     except IndexError:
         print("Planilha não existe.")
         return None
 
-def insert_sheet(category, timestamp, value, entity, sheet_name):
+#devolve o indice da entidade da qual fez a transacao
+def get_entity_index(sheet, entity):
     book = xlrd.open_workbook('base.xlsx')
-    worksheet = get_sheet_by_name(sheet_name)
+    temporary_sheet = book.sheet_by_name(sheet_name)
+    #print(type(temporary_sheet))
+    #num_rows = temporary_sheet.nrow
+    print(type(sheet))
+    num_rows = 100
+    for index in range(2,num_rows):
+        cell_val= temporary_sheet.cell(index, 0).value
+        print(type(cell_val))
+        #caso a entidade ja exista ou n 
+        if(cell_val == entity or cell_val == ''):
+            print(index)
+            break
+    return index
+    
+#insere na linha a transacao 
+def insert_sheet(category, timestamp, value, entity):
+    book1 = xlrd.open_workbook('base.xlsx',  formatting_info=True)
+    #copia formatacao da planilha
+    book = xl_copy(book1)
+    sheet = get_sheet_by_name(book)
     #insere entidade numa coluna fixa
-    worksheet.write(2,0,entity)
+    #worksheet.write(get_entity_index(worksheet, entity),0,entity)
+    setOutCell(sheet, 0, get_entity_index(sheet, entity), entity)
+    book.save("base.xlsx")
     #insere valor
-    worksheet.write(2,timestamp.month, value)
+    #worksheet.write(get_entity_index(worksheet, entity),timestamp.month, value)
     
-    
+def _getOutCell(outSheet, colIndex, rowIndex):
+    """ HACK: Extract the internal xlwt cell representation. """
+    row = outSheet._Worksheet__rows.get(rowIndex)
+    if not row: return None
+
+    cell = row._Row__cells.get(colIndex)
+    return cell
+
+def setOutCell(outSheet, col, row, value):
+    """ Change cell value without changing formatting. """
+    # HACK to retain cell style.
+    previousCell = _getOutCell(outSheet, col, row)
+    # END HACK, PART I
+
+    outSheet.write(row, col, value)
+
+    # HACK, PART II
+    if previousCell:
+        newCell = _getOutCell(outSheet, col, row)
+        if newCell:
+            newCell.xf_idx = previousCell.xf_idx
+    # END HACK
+'''
+setOutCell(outSheet, 5, 5, 'Test')
+outBook.save('output.xls')    
+'''
+
+
+
 
 # this is done to make SSL connnection with GMAIL 
 con = imaplib.IMAP4_SSL(imap_url)  
