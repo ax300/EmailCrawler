@@ -78,7 +78,6 @@ def get_emails(result_bytes):
                 regex = 'Nubank'
                 FROM = re.findall(regex,msg['from'])
                 print(define_subject(msg))
-                #print("from: " + FROM[0])
                 print("Delivered to: " + msg['Delivered-To'])
                 print("Date: " + msg['Date'])
                 timestamp = datetime.datetime.strptime(msg['Date'].split(', ')[1].split(' +')[0], '%d %b %Y %H:%M:%S')
@@ -149,17 +148,22 @@ def fill_sheet(sheet, book):
     sheet.write(100, 10, xlwt.Formula('SUM(K100;J101)'))
     sheet.write(100, 11, xlwt.Formula('SUM(L100;K101)'))
     sheet.write(100, 12, xlwt.Formula('SUM(M100;L101)'))
+    first_col = sheet.col(0)
+    first_col.width = 256 * 50
     book.save("base.xlsx")
 
 #insere os valores da planilha das transacoes
 def get_values(msg, category, timestamp):
     c = get_body(msg).decode('utf-8')
     message = html2text.html2text(c) 
+
     #filtra o valor transferido/pago da mensagem
-    pattern_of_value = re.compile(r'\d+,\d\d')
+    pattern_of_value = re.compile(r'(((\d){1,3}(\.\d\d\d)*)|\d+)(,\d+)') 
     value = pattern_of_value.findall(message)
-    
-    print("Valor: " + str(value[0]))
+   
+    value = value[0][0] + value[0][len(value[0])-1]
+    print("Valor: " + str(value))
+   
     #filtra a entidade da qual recebeu/enviou tal valor
     pattern_of_entity = re.compile(r'\*+([A-Za-z\s^\nÀ-ÖØ-öø-ÿ!,]*?)\*+')
     match_entity = pattern_of_entity.findall(message)
@@ -168,11 +172,9 @@ def get_values(msg, category, timestamp):
 
     if (category == 1 ):
         #procura entidade
-        concatenated = ''
-        for word in match_entity2[2]:
-            concatenated += word
-        print("ACHEI A ENTIDADE2: " + concatenated)
-        insert_sheet(category, timestamp, value[0], concatenated)
+        entity = ''.join(match_entity2[2])
+        print("ACHEI A ENTIDADE2: " + entity)
+        insert_sheet(category, timestamp, value[0], entity)
 
     elif (category == 2):
         #procura entidade
@@ -220,26 +222,22 @@ def get_sheet_by_name(book):
         for idx in itertools.count():
             sheet = book.get_sheet(idx)
             if sheet.name == sheet_name:
-                print(sheet_name)
                 return sheet
     except IndexError:
         print("Planilha não existe.")
         return None
 
 #devolve o indice da entidade da qual fez a transacao
-def get_entity_index(sheet, entity):
+def get_entity_index(entity):
     book = xlrd.open_workbook('base.xlsx')
     temporary_sheet = book.sheet_by_name(sheet_name)
     #print(type(temporary_sheet))
     #num_rows = temporary_sheet.nrow
-    print(type(sheet))
     num_rows = 100
     for index in range(2,num_rows):
         cell_val= temporary_sheet.cell(index, 0).value
-        print(type(cell_val))
         #caso a entidade ja exista ou n 
         if(cell_val == entity or cell_val == ''):
-            print(index)
             break
     return index
     
@@ -250,12 +248,18 @@ def insert_sheet(category, timestamp, value, entity):
     book = xl_copy(book1)
     sheet = get_sheet_by_name(book)
     #insere entidade numa coluna fixa
-    #worksheet.write(get_entity_index(worksheet, entity),0,entity)
-    setOutCell(sheet, 0, get_entity_index(sheet, entity), entity)
-    book.save("base.xlsx")
+    setOutCell(sheet, 0, get_entity_index(entity), entity)
     #insere valor
-    #worksheet.write(get_entity_index(worksheet, entity),timestamp.month, value)
+    setOutCell(sheet, timestamp.month, get_entity_index(entity), value)
+    book.save("base.xlsx")
     
+def get_current_cell_value (col, row):
+    book = xlrd.open_workbook('base.xlsx')
+    temporary_sheet = book.sheet_by_name(sheet_name)
+    cell_val = temporary_sheet.cell(row, col).value
+
+    return cell_val
+
 def _getOutCell(outSheet, colIndex, rowIndex):
     """ HACK: Extract the internal xlwt cell representation. """
     row = outSheet._Worksheet__rows.get(rowIndex)
@@ -267,10 +271,15 @@ def _getOutCell(outSheet, colIndex, rowIndex):
 def setOutCell(outSheet, col, row, value):
     """ Change cell value without changing formatting. """
     # HACK to retain cell style.
+    #print(type(outSheet))
     previousCell = _getOutCell(outSheet, col, row)
     # END HACK, PART I
-
-    outSheet.write(row, col, value)
+    old_value = get_current_cell_value(col,row)
+    #print(type(old_value))
+    if old_value != '' and type(old_value) == int:
+        outSheet.write(row, col, int(value) + int(old_value))
+    else:
+        outSheet.write(row, col, value)
 
     # HACK, PART II
     if previousCell:
@@ -283,9 +292,6 @@ setOutCell(outSheet, 5, 5, 'Test')
 outBook.save('output.xls')    
 '''
 
-
-
-
 # this is done to make SSL connnection with GMAIL 
 con = imaplib.IMAP4_SSL(imap_url)  
 # Pega informacoes de login ou mantem as atuais
@@ -297,6 +303,13 @@ con.login(user,password)
 
 con.select('Inbox')  
   
+# verifica se a planilha com os dados ja existe
+if (os.path.isfile("base.xlsx") == False):
+    print('cria')
+    create_file(sheet_name)
+elif ((sheet_name in xlrd.open_workbook("base.xlsx").sheet_names())== False):
+    print('cria sheet')
+    create_sheet(sheet_name)
 
  # fetching emails from this user "tu**h*****1@gmail.com" 
 
@@ -305,11 +318,4 @@ msgs = get_emails(search('FROM', 'todomundo@nubank.com.br', con))
 
 #msgs = get_emails(search(None,'all' con))   
 
-# verifica se a planilha com os dados ja existe
 
-if (os.path.isfile("base.xlsx") == False):
-    print('cria')
-    create_file(sheet_name)
-elif ((sheet_name in xlrd.open_workbook("base.xlsx").sheet_names())== False):
-    print('cria sheet')
-    create_sheet(sheet_name)
