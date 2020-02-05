@@ -160,7 +160,6 @@ def get_values(msg, category, timestamp):
     #filtra o valor transferido/pago da mensagem
     pattern_of_value = re.compile(r'(((\d){1,3}(\.\d\d\d)*)|\d+)(,\d+)') 
     value = pattern_of_value.findall(message)
-   
     value = value[0][0] + value[0][len(value[0])-1]
     print("Valor: " + str(value))
    
