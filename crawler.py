@@ -104,24 +104,8 @@ def create_file(sheet_name):
     sheet = book.add_sheet(sheet_name)
     fill_sheet(sheet,book)
 
-#preenche planilha
-def fill_sheet(sheet, book):
-    #campos e formulas
-    sheet.write(0, 1,   'Janeiro')
-    sheet.write(0, 2,   'Fevereiro')
-    sheet.write(0, 3,   'Março')
-    sheet.write(0, 4,   'Abril')
-    sheet.write(0, 5,   'Maio')
-    sheet.write(0, 6,   'Junho')
-    sheet.write(0, 7,   'Julho')
-    sheet.write(0, 8,   'agosto')
-    sheet.write(0, 9,   'Setembro')
-    sheet.write(0, 10,  'Outubro')
-    sheet.write(0, 11,  'Novembro')
-    sheet.write(0, 12,  'Dezembro')
-    sheet.write(1,0,    'Salário')
-    sheet.write(99,0,   'Total Mensal')
-    sheet.write(100,0,  'Total')
+#preenche e repreenche as fórmulas
+def fill_sheet_totals(sheet):
     #Totais Mensais
     sheet.write(99, 1,  xlwt.Formula('SUM(B2:B98)'))
     sheet.write(99, 2,  xlwt.Formula('SUM(C2:C98)'))
@@ -148,6 +132,28 @@ def fill_sheet(sheet, book):
     sheet.write(100, 10, xlwt.Formula('SUM(K100;J101)'))
     sheet.write(100, 11, xlwt.Formula('SUM(L100;K101)'))
     sheet.write(100, 12, xlwt.Formula('SUM(M100;L101)'))
+
+#preenche planilha
+def fill_sheet(sheet, book):
+    #campos e formulas
+    sheet.write(0, 1,   'Janeiro')
+    sheet.write(0, 2,   'Fevereiro')
+    sheet.write(0, 3,   'Março')
+    sheet.write(0, 4,   'Abril')
+    sheet.write(0, 5,   'Maio')
+    sheet.write(0, 6,   'Junho')
+    sheet.write(0, 7,   'Julho')
+    sheet.write(0, 8,   'agosto')
+    sheet.write(0, 9,   'Setembro')
+    sheet.write(0, 10,  'Outubro')
+    sheet.write(0, 11,  'Novembro')
+    sheet.write(0, 12,  'Dezembro')
+    sheet.write(1,0,    'Salário')
+    sheet.write(99,0,   'Total Mensal')
+    sheet.write(100,0,  'Total')
+
+    fill_sheet_totals(sheet)
+
     first_col = sheet.col(0)
     first_col.width = 256 * 50
     book.save("base.xlsx")
@@ -161,6 +167,9 @@ def get_values(msg, category, timestamp):
     pattern_of_value = re.compile(r'(((\d){1,3}(\.\d\d\d)*)|\d+)(,\d+)') 
     value = pattern_of_value.findall(message)
     value = value[0][0] + value[0][len(value[0])-1]
+    value = value.replace('.', '')
+    value = value.replace(',', '.')
+    value = float(value)
     print("Valor: " + str(value))
    
     #filtra a entidade da qual recebeu/enviou tal valor
@@ -173,22 +182,24 @@ def get_values(msg, category, timestamp):
         #procura entidade
         entity = ''.join(match_entity2[2])
         print("ACHEI A ENTIDADE2: " + entity)
-        insert_sheet(category, timestamp, value[0], entity)
+        insert_sheet(category, timestamp, value*-1, entity)
 
     elif (category == 2):
         #procura entidade
         print("ACHEI A ENTIDADE: " + match_entity[1])
-        insert_sheet(category, timestamp, value[0], match_entity[1])
+        insert_sheet(category, timestamp, value*-1, match_entity[1])
 
     elif (category == 3):
         #procura entidade
+        if(match_entity[1] == ''):
+            match_entity[1] = 'Boleto'
         print("ACHEI A ENTIDADE: " + match_entity[1])
-        insert_sheet(category, timestamp, value[0], match_entity[1])
+        insert_sheet(category, timestamp, value, match_entity[1])
 
     elif (category == 4):
         #fatura  
         print('Entidade: Nubank')
-        insert_sheet(category, timestamp, value[0], 'Nubank')
+        insert_sheet(category, timestamp, value*-1, 'Nubank')
 
 #preenche o subject com valor sem codificacao
 def define_subject(msg):
@@ -250,6 +261,7 @@ def insert_sheet(category, timestamp, value, entity):
     setOutCell(sheet, 0, get_entity_index(entity), entity)
     #insere valor
     setOutCell(sheet, timestamp.month, get_entity_index(entity), value)
+    fill_sheet_totals(sheet)
     book.save("base.xlsx")
     
 def get_current_cell_value (col, row):
@@ -274,8 +286,8 @@ def setOutCell(outSheet, col, row, value):
     previousCell = _getOutCell(outSheet, col, row)
     # END HACK, PART I
     old_value = get_current_cell_value(col,row)
-    #print(type(old_value))
-    if old_value != '' and type(old_value) == int:
+    if old_value != '' and type(old_value) == float:
+        print("Era pra somar")
         outSheet.write(row, col, int(value) + int(old_value))
     else:
         outSheet.write(row, col, value)
